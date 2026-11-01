@@ -10,15 +10,16 @@ var MODES = {
     { title: 'Работа и энергия', ids: ['g7-work'] }
   ]},
   '8': { short: '8', title: '8 класс', groups: [
-    { title: 'Тепловые явления', ids: ['g8-heat', 'g8-phase'] },
+    { title: 'Тепловые явления', ids: ['g8-solids', 'g8-heat', 'g8-phase'] },
     { title: 'Электрические явления', ids: ['g8-electro', 'g8-current'] },
-    { title: 'Электромагнитные явления', ids: ['g8-magnet'] },
+    { title: 'Электромагнитные явления', ids: ['g8-magnet', 'g8-induct'] },
     { title: 'Световые явления', ids: ['g8-light'] }
   ]},
   '9': { short: '9', title: '9 класс', groups: [
     { title: 'Законы движения и взаимодействия', ids: ['g9-kin', 'g9-dyn', 'g9-cons'] },
     { title: 'Колебания и волны', ids: ['g9-osc'] },
     { title: 'Электромагнитное поле', ids: ['g9-em'] },
+    { title: 'Световые явления', ids: ['g8-light'] },
     { title: 'Атом и ядро', ids: ['g9-atom'] },
     { title: 'Вселенная', ids: ['g9-space'] }
   ]},
@@ -36,10 +37,10 @@ var MODES = {
   ]},
   'oge': { short: 'ОГЭ', title: 'ОГЭ', exam: true, intro: 'oge-exam', introGroup: 'Об экзамене', groups: [
     { title: 'Механические явления', ids: ['g9-kin', 'g7-motion', 'g7-density', 'g7-forces', 'g9-dyn', 'g9-cons', 'g7-work', 'g7-pressure', 'g7-archimedes', 'g9-osc'] },
-    { title: 'Тепловые явления', ids: ['g7-matter', 'g8-heat', 'g8-phase'] },
-    { title: 'Электромагнитные явления', ids: ['g8-electro', 'g8-current', 'g8-magnet', 'g9-em', 'g8-light'] },
+    { title: 'Тепловые явления', ids: ['g7-matter', 'g8-solids', 'g8-heat', 'g8-phase'] },
+    { title: 'Электромагнитные явления', ids: ['g8-electro', 'g8-current', 'g8-magnet', 'g8-induct', 'g9-em', 'g8-light'] },
     { title: 'Квантовые явления', ids: ['g9-atom'] },
-    { title: 'Методы познания', ids: ['g7-intro'] }
+    { title: 'Методы и практика', ids: ['g7-intro', 'oge-lab', 'oge-nature'] }
   ]},
   'ege': { short: 'ЕГЭ', title: 'ЕГЭ', exam: true, intro: 'exam', introGroup: 'Об экзамене', groups: [] }
 };
@@ -50,3 +51,6 @@ TOPICS.forEach(function (t) {
   if (!g) MODES.ege.groups.push(g = { title: t.group, ids: [] });
   g.ids.push(t.id);
 });
+// Механизмы проводимости (код 3.2.10) разобраны в разделе 10 класса
+var egeDc = MODES.ege.groups.find(function (x) { return x.ids.indexOf('dc') >= 0; });
+egeDc.ids.splice(egeDc.ids.indexOf('dc') + 1, 0, 'g10-media');
