@@ -88,7 +88,9 @@
   function allTasks() {
     const order = topics().map(t => t.id);
     // У задач математики line — номер задания в КИМ по режимам: задача видна там, где он указан
-    return poolTasks().filter(t => order.includes(t.topic) && (!t.line || t.line[S.mode] != null))
+    // В школьных классах из задач с номером КИМ берём только экзамены из taskFrom (9 класс — ОГЭ, 10–11 — ЕГЭ)
+    const sources = mode().lines ? [S.mode] : (mode().taskFrom || []);
+    return poolTasks().filter(t => order.includes(t.topic) && (!t.line || sources.some(k => t.line[k] != null)))
       .sort((a, b) => order.indexOf(a.topic) - order.indexOf(b.topic) || (a.part || 1) - (b.part || 1));
   }
   function taskById(id) { return poolTasks().find(t => t.id === id); }

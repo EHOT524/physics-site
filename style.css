@@ -65,7 +65,7 @@ a { color: var(--accent); }
 }
 .brand { font-weight: 700; font-size: 18px; }
 .brand span { font-weight: 400; color: var(--muted); font-size: 14px; margin-left: 6px; }
-.modes { display: inline-flex; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
+.modes { display: inline-flex; flex-wrap: wrap; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
 .modes button { border: 0; border-radius: 0; padding: 6px 11px; border-right: 1px solid var(--line); }
 .modes button:last-child { border-right: 0; }
 .modes button.active { background: var(--accent); color: #fff; font-weight: 600; }
