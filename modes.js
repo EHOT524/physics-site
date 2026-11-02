@@ -42,7 +42,7 @@ var MODES = {
     { title: 'Квантовые явления', ids: ['g9-atom'] },
     { title: 'Методы и практика', ids: ['g7-intro', 'oge-lab', 'oge-nature'] }
   ]},
-  'ege': { short: 'ЕГЭ', title: 'ЕГЭ', exam: true, intro: 'exam', introGroup: 'Об экзамене', groups: [] }
+  'ege': { short: 'ЕГЭ', title: 'ЕГЭ', exam: true, primary: true, intro: 'exam', introGroup: 'Об экзамене', groups: [] }
 };
 
 // ЕГЭ — темы кодификатора из theory.js

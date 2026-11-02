@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Физика — кабинет репетитора</title>
+<title>Физика и математика — кабинет репетитора</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
 <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
 <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"></script>
@@ -11,7 +11,8 @@
 </head>
 <body>
 <header class="topbar">
-  <div class="brand">⚛ Физика <span id="brandSub"></span></div>
+  <div class="brand"><b id="brandName"></b> <span id="brandSub"></span></div>
+  <div id="subjects" class="modes" title="Предмет"></div>
   <div id="modes" class="modes" title="Класс или экзамен"></div>
   <nav id="nav">
     <button data-view="theory">Теория</button>
@@ -60,6 +61,10 @@
 <script src="codif2027.js"></script>
 <script src="codif2027-tasks.js"></script>
 <script src="modes.js"></script>
+<script src="math-theory.js"></script>
+<script src="math-oge.js"></script>
+<script src="math-base.js"></script>
+<script src="math-prof.js"></script>
 <script src="app.js"></script>
 </body>
 </html>

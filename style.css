@@ -69,6 +69,8 @@ a { color: var(--accent); }
 .modes button { border: 0; border-radius: 0; padding: 6px 11px; border-right: 1px solid var(--line); }
 .modes button:last-child { border-right: 0; }
 .modes button.active { background: var(--accent); color: #fff; font-weight: 600; }
+.plot { display: block; max-width: 340px; width: 100%; height: auto; margin: 10px 0; color: var(--text); }
+.board-body .plot { max-width: 520px; }
 #nav { display: flex; gap: 4px; flex-wrap: wrap; }
 #nav button { border-color: transparent; }
 #nav button.active { background: var(--accent-soft); color: var(--accent); font-weight: 600; }

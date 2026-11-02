@@ -6,12 +6,14 @@
   const app = document.getElementById('app');
 
   // ---------- Хранилище ----------
-  const defaults = { theme: 'light', mode: 'ege', myTasks: [], students: [], currentStudent: null, lastView: 'theory', lastTheory: {} };
+  const defaults = { theme: 'light', subject: 'phys', mode: 'ege', lastMode: {}, myTasks: [], students: [], currentStudent: null, lastView: 'theory', lastTheory: {} };
   let S;
   try { S = Object.assign({}, defaults, JSON.parse(localStorage.getItem(STORE_KEY) || '{}')); }
   catch (e) { S = Object.assign({}, defaults); }
   if (!S.lastTheory || typeof S.lastTheory !== 'object') S.lastTheory = {};
   if (!MODES[S.mode]) S.mode = 'ege';
+  S.subject = MODES[S.mode].subject || 'phys';
+  if (!S.lastMode) S.lastMode = {};
   function save() {
     try { localStorage.setItem(STORE_KEY, JSON.stringify(S)); }
     catch (e) { toast('Не удалось сохранить данные в браузере'); }
@@ -65,7 +67,7 @@
     for (let i = 0; i < 3; i++) s = s.replace(/\\[dt]?frac\{([^{}]*)\}\{([^{}]*)\}/g, '($1)/($2)');
     s = s.replace(/\\sqrt\{([^{}]*)\}/g, '√($1)');
     s = s.replace(/\\(text|mathrm|mathit|vec|overline)\{([^{}]*)\}/g, '$2');
-    s = s.replace(/\\([A-Za-z]+)/g, (m, w) => GREEK[w] || ({ cdot: '·', times: '×', approx: '≈', le: '≤', ge: '≥', ne: '≠', to: '→', circ: '°', degree: '°', infty: '∞', pm: '±' }[w]) || '');
+    s = s.replace(/\\([A-Za-z]+)/g, (m, w) => GREEK[w] || ({ cdot: '·', times: '×', approx: '≈', le: '≤', ge: '≥', ne: '≠', to: '→', circ: '°', degree: '°', infty: '∞', pm: '±', log: 'log', ln: 'ln', lg: 'lg', sin: 'sin', cos: 'cos', tg: 'tg', ctg: 'ctg', angle: '∠', triangle: '△', parallel: '∥', perp: '⊥', cup: '∪', cap: '∩', in: '∈' }[w]) || '');
     s = s.replace(/\^\{([^{}]*)\}/g, '^$1').replace(/_\{([^{}]*)\}/g, '$1').replace(/[{}$]/g, '').replace(/\\[,;! ]/g, ' ');
     return s.replace(/[ \t]+/g, ' ').replace(/\n\s*\n+/g, '\n').trim();
   }
@@ -85,7 +87,8 @@
   // Задачи текущего режима (класса/экзамена)
   function allTasks() {
     const order = topics().map(t => t.id);
-    return poolTasks().filter(t => order.includes(t.topic))
+    // У задач математики line — номер задания в КИМ по режимам: задача видна там, где он указан
+    return poolTasks().filter(t => order.includes(t.topic) && (!t.line || t.line[S.mode] != null))
       .sort((a, b) => order.indexOf(a.topic) - order.indexOf(b.topic) || (a.part || 1) - (b.part || 1));
   }
   function taskById(id) { return poolTasks().find(t => t.id === id); }
@@ -120,10 +123,11 @@
   }
 
   function kindLabel(t) {
-    if (!mode().exam) return t.part === 2 ? 'Подробное решение' : (t.kind === 'choice' ? 'Выбор / соответствие' : 'Краткий ответ');
+    if (!mode().exam || mode().flat) return t.part === 2 ? 'Подробное решение' : (t.kind === 'choice' ? 'Выбор / соответствие' : 'Краткий ответ');
     return t.part === 2 ? 'Часть 2 · развёрнутый ответ' : (t.kind === 'choice' ? 'Часть 1 · выбор / соответствие' : 'Часть 1 · краткий ответ');
   }
-  const partName = p => mode().exam ? `Часть ${p}` : (p === 1 ? 'Краткий ответ' : 'Подробное решение');
+  const partName = p => mode().exam && !mode().flat ? `Часть ${p}` : (p === 1 ? 'Краткий ответ' : 'Подробное решение');
+  const lineOf = t => (t.line ? t.line[S.mode] : null);
 
   function taskCard(t, num) {
     const mark = studentMark(t.id);
@@ -132,6 +136,7 @@
     return `<div class="card task" data-id="${esc(t.id)}">
       <div class="task-head">
         ${num ? `<b>№ ${num}</b>` : ''}
+        ${lineOf(t) ? `<span class="tag p2">Задание ${lineOf(t)}</span>` : ''}
         <span class="tag ${t.part === 2 ? 'p2' : ''}">${kindLabel(t)}</span>
         <span class="tag">${esc(topicById(t.topic).title)}</span>
         ${t.level ? `<span class="tag">${'★'.repeat(t.level)}</span>` : ''}
@@ -193,7 +198,7 @@
       if (s.group !== grp) { grp = s.group; side += `<div class="grp">${esc(grp)}</div>`; }
       side += `<a href="#" data-sec="${s.id}" class="${s.id === sec.id ? 'active' : ''}">${esc(s.title)}</a>`;
     });
-    const n = poolTasks().filter(t => t.topic === sec.id).length;
+    const n = allTasks().filter(t => t.topic === sec.id).length;
     app.innerHTML = `<div class="split">
       <aside class="side">${side}</aside>
       <section>
@@ -210,13 +215,14 @@
   }
 
   // ---------- Вкладка «Задачи» ----------
-  const taskFilter = { topic: '', part: '', q: '', status: '' };
+  const taskFilter = { topic: '', part: '', q: '', status: '', line: '' };
   function viewTasks() {
     if (taskFilter.topic && !inMode(taskFilter.topic)) taskFilter.topic = '';
     const opts = topics().map(t => `<option value="${t.id}" ${taskFilter.topic === t.id ? 'selected' : ''}>${esc(t.group)} — ${esc(t.title)}</option>`).join('');
     app.innerHTML = `
       <div class="filters no-print">
         <select id="fTopic"><option value="">Все темы</option>${opts}</select>
+        ${mode().lines ? `<select id="fLine"><option value="">Все задания КИМ</option>${Array.from({ length: mode().lines }, (_, i) => `<option value="${i + 1}" ${taskFilter.line === String(i + 1) ? 'selected' : ''}>Задание ${i + 1}</option>`).join('')}</select>` : ''}
         <select id="fPart">
           <option value="">${mode().exam ? 'Обе части' : 'Все типы'}</option>
           <option value="1" ${taskFilter.part === '1' ? 'selected' : ''}>${partName(1)}</option>
@@ -238,6 +244,7 @@
       const q = taskFilter.q.toLowerCase();
       const list = allTasks().filter(t =>
         (!taskFilter.topic || t.topic === taskFilter.topic) &&
+        (!taskFilter.line || !mode().lines || String(lineOf(t)) === taskFilter.line) &&
         (!taskFilter.part || String(t.part) === taskFilter.part) &&
         (!q || plain(t.text).toLowerCase().includes(q)) &&
         (!taskFilter.status || !student() || (taskFilter.status === 'new' ? !studentMark(t.id) : studentMark(t.id) === taskFilter.status)));
@@ -248,6 +255,7 @@
     };
     $('#fTopic').onchange = e => { taskFilter.topic = e.target.value; draw(); };
     $('#fPart').onchange = e => { taskFilter.part = e.target.value; draw(); };
+    if ($('#fLine')) $('#fLine').onchange = e => { taskFilter.line = e.target.value; draw(); };
     if ($('#fStatus')) $('#fStatus').onchange = e => { taskFilter.status = e.target.value; draw(); };
     $('#fQ').oninput = e => { taskFilter.q = e.target.value; draw(); };
     $('#boardAll').onclick = () => currentList.length && openBoard(currentList, 0);
@@ -269,6 +277,7 @@
           <label>${partName(2)}: <input type="number" id="vN2" value="3" min="0" max="30" style="width:70px"></label>
           <label>Название: <input id="vTitle" value="${mode().exam ? 'Домашнее задание' : 'Самостоятельная работа'} · ${esc(mode().title)}"></label>
           <button class="primary" id="vMake">Собрать</button>
+          ${mode().lines ? `<button id="vKim" title="По одной задаче на каждый номер КИМ">Вариант как на экзамене (${mode().lines} заданий)</button>` : ''}
         </div>
       </div>
       <div id="vOut"></div>`;
@@ -285,6 +294,16 @@
         return pool.slice(0, n).sort((a, b) => order.indexOf(a.topic) - order.indexOf(b.topic));
       };
       variant = { title: $('#vTitle').value || 'Вариант', ids: pick(1, +$('#vN1').value || 0).concat(pick(2, +$('#vN2').value || 0)).map(t => t.id) };
+      drawVariant();
+    };
+    if ($('#vKim')) $('#vKim').onclick = () => {
+      const ids = [];
+      for (let n = 1; n <= mode().lines; n++) {
+        const pool = shuffle(allTasks().filter(t => lineOf(t) === n));
+        if (student()) pool.sort((a, b) => (studentMark(a.id) === 'ok') - (studentMark(b.id) === 'ok'));
+        if (pool.length) ids.push(pool[0].id);
+      }
+      variant = { title: `Вариант · ${mode().title}`, ids };
       drawVariant();
     };
     if (variant) drawVariant();
@@ -448,7 +467,7 @@
 
   // ---------- Вкладка «Справка» ----------
   function viewRef() {
-    app.innerHTML = `<div class="card theory">${REFERENCE}</div>`;
+    app.innerHTML = `<div class="card theory">${S.subject === 'math' ? MATH_REFERENCE : REFERENCE}</div>`;
     math(app);
   }
 
@@ -521,16 +540,27 @@
 
   // Переключатель «7 · 8 · 9 · 10 · 11 · ОГЭ · ЕГЭ»
   function drawModes() {
-    $('#modes').innerHTML = Object.keys(MODES).map(k =>
+    const subjectOf = k => MODES[k].subject || 'phys';
+    const names = { phys: 'Физика', math: 'Математика' };
+    $('#subjects').innerHTML = Object.keys(names).map(k =>
+      `<button data-subject="${k}" class="${k === S.subject ? 'active' : ''}">${names[k]}</button>`).join('');
+    $('#modes').innerHTML = Object.keys(MODES).filter(k => subjectOf(k) === S.subject).map(k =>
       `<button data-mode="${k}" class="${k === S.mode ? 'active' : ''}" title="${esc(MODES[k].title)}">${esc(MODES[k].short)}</button>`).join('');
+    $('#brandName').textContent = names[S.subject];
     $('#brandSub').textContent = mode().title;
-    document.title = `Физика · ${mode().title}`;
-    $$('#modes button').forEach(b => b.onclick = () => {
-      if (b.dataset.mode === S.mode) return;
+    document.title = `${names[S.subject]} · ${mode().title}`;
+    const switchTo = m => {
       closeBoard();
-      S.mode = b.dataset.mode; save();
-      taskFilter.topic = ''; variant = null; editing = null;
+      S.mode = m; S.subject = subjectOf(m); S.lastMode[S.subject] = m; save();
+      taskFilter.topic = ''; taskFilter.line = ''; variant = null; editing = null;
       drawModes(); rerender(); window.scrollTo(0, 0);
+    };
+    $$('#modes button').forEach(b => b.onclick = () => { if (b.dataset.mode !== S.mode) switchTo(b.dataset.mode); });
+    $$('#subjects button').forEach(b => b.onclick = () => {
+      const s = b.dataset.subject;
+      if (s === S.subject) return;
+      S.lastMode[S.subject] = S.mode;
+      switchTo(S.lastMode[s] ||Object.keys(MODES).find(k => subjectOf(k) === s && MODES[k].primary) || Object.keys(MODES).find(k => subjectOf(k) === s));
     });
   }
   drawModes();
